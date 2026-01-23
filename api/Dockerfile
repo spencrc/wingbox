@@ -1,0 +1,18 @@
+FROM golang:1.25.6-alpine AS builder
+
+WORKDIR /app
+COPY . .
+
+# build the binary! we don't want CGO enabled as it's unnecessary and will increase the binary's size
+RUN CGO_ENABLED=0 go build -o /bin/app .
+
+# copy into our distroless image! no shell, and we use nonroot to keep permissions to a minimum
+FROM gcr.io/distroless/static-debian12:nonroot AS final
+
+COPY --from=builder /bin/app /
+
+EXPOSE 3001
+
+ENTRYPOINT ["/app"] 
+CMD ["--port", "3001"]
+
