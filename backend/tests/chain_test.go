@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"wingbox.spencrc/lib"
+	"wingbox.spencrc/internal/shared"
 )
 
 func TestChain(t *testing.T) {
@@ -59,7 +59,7 @@ func TestChain(t *testing.T) {
 
 	m := http.NewServeMux()
 
-	c1 := lib.Chain{mw1, mw2}
+	c1 := shared.Chain{mw1, mw2}
 
 	m.Handle("GET /{$}", c1.ThenFunc(hf))
 

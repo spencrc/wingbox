@@ -1,6 +1,8 @@
 services:
   api:
-    build: ./api
+    build: 
+      context: ./backend
+      dockerfile: build/Dockerfile.api
     ports: [3001:3001]
   frontend:
     build: ./frontend
