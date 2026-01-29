@@ -4,6 +4,12 @@ services:
       context: ./backend
       dockerfile: build/Dockerfile.api
     ports: [3001:3001]
+  auth:
+    build: 
+      context: ./backend
+      dockerfile: build/Dockerfile.auth
+    ports: [3002:3002]
+    env_file: ./backend/secrets/auth.env
   frontend:
     build: ./frontend
     ports: [8080:8080]

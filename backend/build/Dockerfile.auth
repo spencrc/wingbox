@@ -5,15 +5,15 @@ COPY . .
 RUN go mod download
 
 # build the binary! we don't want CGO enabled as it's unnecessary and will increase the binary's size
-RUN CGO_ENABLED=0 go build -o /bin/app ./cmd/api
+RUN CGO_ENABLED=0 go build -o /bin/app ./cmd/auth
 
 # copy into our distroless image! no shell, and we use nonroot to keep permissions to a minimum
 FROM gcr.io/distroless/static-debian12:nonroot AS final
 
 COPY --from=builder /bin/app /
 
-EXPOSE 3001
+EXPOSE 3002
 
 ENTRYPOINT ["/app"] 
-CMD ["--port", "3001"]
+CMD ["--port", "3002"]
 
