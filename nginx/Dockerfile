@@ -5,15 +5,15 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
+COPY --from=frontend package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile 
 
-FROM base AS build
+FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=frontend . ./
 RUN pnpm run build
 
 FROM openresty/openresty:1.27.1.2-0-alpine AS final
-COPY nginx/ /etc/nginx/conf.d/
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY conf.d/ /etc/nginx/conf.d/
+COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 8080

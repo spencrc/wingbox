@@ -10,7 +10,9 @@ services:
       dockerfile: build/Dockerfile.auth
     ports: [3002:3002]
     env_file: ./backend/secrets/auth.env
-  frontend:
-    build: ./frontend
+  nginx:
+    build: 
+      context: ./nginx
+      additional_contexts:
+        frontend: ./frontend
     ports: [8080:8080]
-    depends_on: [api]
