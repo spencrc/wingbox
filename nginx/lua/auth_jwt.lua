@@ -23,10 +23,15 @@ end
 
 local jwt_obj = jwt:verify(JWT_SECRET, token)
 if not jwt_obj["verified"] then
-    ngx.status = ngx.HTTP_UNAUTHORIZED
-    ngx.say("Invalid token: ", jwt_obj.reason)
-    -- Use refresh token!
-    return ngx.exit(ngx.HTTP_UNAUTHORIZED)
+    local refresh_token = ngx.var.cookie_refresh_token
+    if refresh_token then
+        --check if refresh token is blocked in redis
+        --make internal request to /api/auth/refresh to get new jwt
+    else
+        ngx.status = ngx.HTTP_UNAUTHORIZED
+        ngx.say("Invalid token: ", jwt_obj.reason)
+        return ngx.exit(ngx.HTTP_UNAUTHORIZED)
+    end
 end
 
 ngx.req.set_header("X-User-ID", jwt_obj.payload.sub)

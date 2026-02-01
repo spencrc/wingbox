@@ -1,0 +1,19 @@
+FROM golang:1.25.6-alpine AS builder
+
+WORKDIR /app
+COPY . .
+RUN go mod download
+
+# build the binary! we don't want CGO enabled as it's unnecessary and will increase the binary's size
+RUN CGO_ENABLED=0 go build -o /bin/app ./cmd/migrator
+# Create the /db folder to be used for mounting the volume
+RUN mkdir /db
+
+# copy into our distroless image! no shell, and we use nonroot to keep permissions to a minimum
+FROM gcr.io/distroless/static-debian12:nonroot AS final
+
+COPY --from=builder /bin/app /
+COPY --from=builder --chown=65532:65532 /db /db
+
+ENTRYPOINT ["/app"] 
+

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"net/url"
 
+	_ "modernc.org/sqlite"
 	"wingbox.spencrc/internal/shared"
 	"wingbox.spencrc/internal/shared/server"
 )
@@ -82,6 +84,13 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	s := server.Init()
+
+	const DB_PATH = "/db/app.db"
+	db, err := sql.Open("sqlite", DB_PATH)
+	if err != nil {
+		s.LogFatal("Failed to open sqlite database", "err", err)
+	}
+	defer db.Close()
 
 	discordClientId := shared.Ensureenv("DISCORD_CLIENT_ID")
 	redirectURI := shared.Ensureenv("REDIRECT_URI")

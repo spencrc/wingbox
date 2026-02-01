@@ -1,0 +1,13 @@
+services:
+  sqlite-cli:
+    image: alpine/sqlite
+    volumes:
+      - wingbox_sqlite-data:/db
+    working_dir: /db
+    entrypoint: ["sqlite3"]
+    stdin_open: true
+    tty: true
+
+volumes:
+  wingbox_sqlite-data:
+    external: true

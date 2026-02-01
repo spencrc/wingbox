@@ -1,4 +1,9 @@
 services:
+  migrator:
+    build: 
+      context: ./backend
+      dockerfile: build/Dockerfile.migrator
+    volumes: [sqlite-data:/db]
   api:
     build: 
       context: ./backend
@@ -12,6 +17,7 @@ services:
     env_file: 
       - ./backend/secrets/auth.env
       - ./shared/.env
+    volumes: [sqlite-data:/db]
   nginx:
     build: 
       context: ./nginx
@@ -19,3 +25,8 @@ services:
         frontend: ./frontend
     ports: [8080:8080]
     env_file: ./shared/.env
+
+# using a named mount so it'll go to Docker's specified storage directory. don't want it cluttering my SSD.
+volumes:
+  sqlite-data:
+
