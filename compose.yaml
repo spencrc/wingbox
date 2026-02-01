@@ -9,10 +9,13 @@ services:
       context: ./backend
       dockerfile: build/Dockerfile.auth
     ports: [3002:3002]
-    env_file: ./backend/secrets/auth.env
+    env_file: 
+      - ./backend/secrets/auth.env
+      - ./shared/.env
   nginx:
     build: 
       context: ./nginx
       additional_contexts:
         frontend: ./frontend
     ports: [8080:8080]
+    env_file: ./shared/.env

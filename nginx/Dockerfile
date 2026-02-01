@@ -13,7 +13,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=frontend . ./
 RUN pnpm run build
 
-FROM openresty/openresty:1.27.1.2-0-alpine AS final
-COPY conf.d/ /etc/nginx/conf.d/
+FROM openresty/openresty:alpine AS final
+RUN apk add --no-cache curl perl
+RUN opm install SkyLothar/lua-resty-jwt
+# FOR NEXT LINE SEE: https://stackoverflow.com/questions/57734748/changing-nginx-conf-file
+COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf 
+COPY lua/ /usr/local/openresty/nginx/lua
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 8080
