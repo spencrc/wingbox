@@ -7,7 +7,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-type migration struct {
+type Migration struct {
 	name string
 	sql string
 }
@@ -21,7 +21,7 @@ func main() {
 	}
 	defer db.Close()
 
-	migrations := []migration {
+	migrations := []Migration {
 		{
 			name: "users",
 			sql: `
@@ -34,10 +34,9 @@ func main() {
 			name: "refresh_tokens",
 			sql: `
 			CREATE TABLE IF NOT EXISTS refresh_tokens (
-				id TEXT PRIMARY KEY,
-				user_id INTEGER NOT NULL,
-				expires_at DATETIME NOT NULL,
-				FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+				jti TEXT PRIMARY KEY,
+				sub TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+				expires_at INTEGER NOT NULL
 			);`,
 		},
 	}
@@ -45,7 +44,7 @@ func main() {
 	for _, m := range migrations {
 		_, err := db.Exec(m.sql)
 		if err != nil {
-			log.Fatalf("failed to migrate table %s: %v", m.name, err)
+			log.Fatalf("failed to perform migration %s: %v", m.name, err)
 		}
 	}
 }

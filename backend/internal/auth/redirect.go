@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -124,7 +125,7 @@ func ensureUser(db *sql.DB, discordID string, userID *uint64) error {
 	insertErr := db.QueryRow(query, discordID).Scan(userID)
 	switch insertErr {
 	case sql.ErrNoRows:
-		if selectErr := db.QueryRow("SELECT id FROM users WHERE discord_id =?", discordID).Scan(&userID); selectErr != nil {
+		if selectErr := db.QueryRow("SELECT id FROM users WHERE discord_id =?", discordID).Scan(userID); selectErr != nil {
 			return selectErr
 		}
 	default:
@@ -166,16 +167,22 @@ func (as *AuthService) Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	accessJti := uuid.NewString()
+	sub := strconv.FormatUint(userID, 10)
 	accessClaims := map[string]string{
 		"jti": accessJti,
-		"sub": strconv.FormatUint(userID, 10),
+		"sub": sub,
 	}
 
 	refreshJti := uuid.NewString()
 	refreshClaims := map[string]string{
 		"jti": refreshJti,
-		"sub": strconv.FormatUint(userID, 10),
+		"sub": sub,
 	}
+
+	db.Exec(`
+		INSERT INTO refresh_tokens (jti, sub, expires_at)
+		VALUES (?, ?, ?);
+	`, refreshJti, sub, time.Now().Add(REFRESH_MAX_AGE).Unix())
 
 	err = as.accessMgr.SetJWTCookie(w, r, accessClaims)
 	if err != nil {

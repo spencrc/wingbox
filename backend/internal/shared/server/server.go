@@ -31,7 +31,7 @@ func Init() *Server {
 	mux := http.NewServeMux()
 
 	// Set up the database!
-	const DB_PATH = "/db/app.db"
+	const DB_PATH = "file:///db/app.db?_pragma=foreign_keys(1)"
 	db, err := sql.Open("sqlite", DB_PATH)
 	if err != nil {
 		log.Print(err)
