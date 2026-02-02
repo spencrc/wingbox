@@ -1,12 +1,15 @@
 package server
 
 import (
+	"database/sql"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/lmittmann/tint"
+	_ "modernc.org/sqlite"
 	"wingbox.spencrc/internal/shared"
 	"wingbox.spencrc/internal/shared/middleware"
 )
@@ -14,6 +17,7 @@ import (
 type Server struct {
 	Logger *slog.Logger
 	mux *http.ServeMux
+	Db *sql.DB
 	BaseChain shared.Chain
 }
 
@@ -26,12 +30,20 @@ func Init() *Server {
 	// We are using http.NewServeMux() to start up a servemux (router)
 	mux := http.NewServeMux()
 
+	// Set up the database!
+	const DB_PATH = "/db/app.db"
+	db, err := sql.Open("sqlite", DB_PATH)
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+
 	// Set up universal middleware!
 	baseChain := shared.Chain{
 		middleware.LogRequest(logger),
 	}
 
-	return &Server{logger, mux, baseChain}
+	return &Server{logger, mux, db, baseChain}
 }
 
 // Wrapper for ServeMux.Handle
@@ -53,6 +65,8 @@ func (s *Server) Listen(port uint64) {
 	// Use http.listenAndServe() to start a new server. We pass the port and the router.
 	//  If http.ListenAndServe() returns, then it means it's errored and we log it.
 	err := http.ListenAndServe(addr, s.mux)
+	// We can only get here if something's gone wrong!
+	s.Db.Close()
 	// Functionally same as log.Fatal, but using custom, structured logger
 	s.LogFatal("Stopping server", "err", err)
 }
