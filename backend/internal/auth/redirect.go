@@ -79,7 +79,7 @@ func fetchTokenData(code string, redirectURI string, clientId string, clientSecr
 	body.Set("client_id", clientId)
 	body.Set("client_secret", clientSecret)
 
-	req, err := http.NewRequest(http.MethodPost, "https://discord.com/api/oauth2/token", strings.NewReader(body.Encode()))
+	req, err := http.NewRequest(http.MethodPost, DISCORD_BASE_URL + "/api/oauth2/token", strings.NewReader(body.Encode()))
 	if err != nil {
 		return TokenRes{}, err
 	}
@@ -97,7 +97,7 @@ func fetchTokenData(code string, redirectURI string, clientId string, clientSecr
 // On failure, returns empty UserRes and error.
 // On success, returns decoded response as UserRes and nil.
 func fetchDiscordUserData(tokenData TokenRes, client *http.Client) (UserRes, error) {
-	req, err := http.NewRequest(http.MethodGet, "https://discord.com/api/users/@me", nil)
+	req, err := http.NewRequest(http.MethodGet, DISCORD_BASE_URL + "/api/users/@me", nil)
 	if err != nil {
 		return UserRes{}, err
 	}
