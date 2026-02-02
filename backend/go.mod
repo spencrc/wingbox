@@ -5,6 +5,11 @@ go 1.25.6
 require github.com/lmittmann/tint v1.1.2
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
+	github.com/stfsy/go-jwt-cookie v1.1.0 // indirect
+)
+
+require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

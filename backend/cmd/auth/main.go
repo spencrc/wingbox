@@ -9,8 +9,11 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v5"
+	jwtcookie "github.com/stfsy/go-jwt-cookie"
 	_ "modernc.org/sqlite"
 	"wingbox.spencrc/internal/shared"
 	"wingbox.spencrc/internal/shared/server"
@@ -72,7 +75,7 @@ func discord(clientId string, redirectURI string) http.HandlerFunc {
 	}
 }
 
-func redirect(redirectURI string, discordClientId string, discordClientSecret string, logger *slog.Logger) http.HandlerFunc {
+func redirect(redirectURI string, discordClientId string, discordClientSecret string, logger *slog.Logger, db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("oauthState")
 		if err != nil {
@@ -159,17 +162,47 @@ func redirect(redirectURI string, discordClientId string, discordClientSecret st
 			return
 		}
 
-		var userData discordCurrentUserResponse
-		err = json.NewDecoder(userRes.Body).Decode(&userData)
+		var discordUserData discordCurrentUserResponse
+		err = json.NewDecoder(userRes.Body).Decode(&discordUserData)
 		if err != nil {
 			http.Error(w, "could not decode JSON response", http.StatusInternalServerError)
 			logger.Warn("could not decode JSON response", "err", err)
 			return
 		}
 
-		w.Write([]byte(userData.UserId))
-
+		w.Write([]byte(discordUserData.UserId))
+		query := `
+			INSERT INTO users (discord_id)
+			VALUES (?)
+			ON CONFLICT(discord_id) DO UPDATE SET discord_id = excluded.discord_id
+			RETURNING id
+		`
 		// now needs to upset into sqlite DB, then grant tokens
+		var userId uint64
+		err = db.QueryRow(query, discordUserData.UserId).Scan(&userId)
+		if err != nil {
+			http.Error(w, "could not add user to database", http.StatusInternalServerError)
+			logger.Warn("could not add user to database", "err", err, "discord_id", discordUserData.UserId)
+			return
+		}
+
+		jwtSecret := shared.Ensureenv("JWT_SECRET")
+		manager, err := jwtcookie.NewCookieManager(
+			jwtcookie.WithHTTPOnly(true),
+			jwtcookie.WithSecure(true),
+			jwtcookie.WithSigningKeyHMAC(
+				[]byte(jwtSecret),
+				[]byte("0123456789abcdef"), // 16-byte salt example; prefer 32 random bytes in production
+			),
+			jwtcookie.WithSigningMethod(jwt.SigningMethodHS256),
+			//TODO: add issuer and audience domains! more secure
+		)
+
+		accessToken := map[string]string{
+			"user_id": strconv.FormatUint(userId, 10),
+		}
+
+		//sign access token
 	}
 }
 
@@ -188,7 +221,7 @@ func main() {
 	redirectURI := shared.Ensureenv("REDIRECT_URI")
 
 	s.Handle("/discord", s.BaseChain.ThenFunc(discord(discordClientId, redirectURI)))
-	s.Handle("/redirect", s.BaseChain.ThenFunc(redirect(redirectURI, discordClientId, discordClientSecret, s.Logger)))
+	s.Handle("/redirect", s.BaseChain.ThenFunc(redirect(redirectURI, discordClientId, discordClientSecret, s.Logger, db)))
 
 	s.Listen(3002)
 }
