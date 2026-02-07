@@ -3,8 +3,10 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -63,5 +65,44 @@ func TestRedeemCookie(t *testing.T) {
 				t.Errorf("got code %s, but was expecting code %s! with cookie value %s, query state %s", code, test.queryCode, test.cookieValue, test.queryState)
 			}
 		})
+	}
+}
+
+type RoundTripFunc func(req *http.Request) *http.Response
+
+func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
+}
+
+func TestFetchTokenData(t *testing.T) {
+	const ACCESS_TOKEN = "mock_atoken_123"
+	const REFRESH_TOKEN = "mock_rtoken_456"
+	
+	body := fmt.Sprintf(`{
+		"access_token": "%s",
+		"refresh_token": "%s"
+	}`, ACCESS_TOKEN, REFRESH_TOKEN)
+
+	// see here: https://dev.to/andreidascalu/testing-your-api-client-in-go-a-method-4bm4
+	client := &http.Client{
+		Transport: RoundTripFunc(func(req *http.Request) *http.Response {
+			return &http.Response{
+				StatusCode: 200,
+				Body: io.NopCloser(strings.NewReader(body)),
+				Header: make(http.Header),
+			}
+		}),
+	}
+
+	res, err := fetchTokenData("code", "uri", "id", "secret", client)
+	if err != nil {
+		t.Errorf("did not expect error, got %v", err)
+	}
+
+	if res.AccessToken != ACCESS_TOKEN {
+		t.Errorf("expected %s, got %s", ACCESS_TOKEN, res.AccessToken)
+	}
+	if res.RefreshToken != "mock_rtoken_456" {
+		t.Errorf("expected %s, got %s", REFRESH_TOKEN, res.RefreshToken)
 	}
 }
