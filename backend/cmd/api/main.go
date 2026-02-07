@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"wingbox.spencrc/internal/shared/server"
+	"wingbox.spencrc/internal/server"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {

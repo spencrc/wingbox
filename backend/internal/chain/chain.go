@@ -1,4 +1,4 @@
-package shared
+package chain
 
 import (
 	"net/http"

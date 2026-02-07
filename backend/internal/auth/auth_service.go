@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	jwtcookie "github.com/stfsy/go-jwt-cookie"
-	"wingbox.spencrc/internal/shared"
-	"wingbox.spencrc/internal/shared/server"
+	shared "wingbox.spencrc/internal/env"
+	"wingbox.spencrc/internal/server"
 )
 
 type AuthService struct {

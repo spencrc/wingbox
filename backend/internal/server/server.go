@@ -10,15 +10,15 @@ import (
 
 	"github.com/lmittmann/tint"
 	_ "modernc.org/sqlite"
-	"wingbox.spencrc/internal/shared"
-	"wingbox.spencrc/internal/shared/middleware"
+	"wingbox.spencrc/internal/chain"
+	"wingbox.spencrc/internal/middleware"
 )
 
 type Server struct {
 	Logger *slog.Logger
 	mux *http.ServeMux
 	Db *sql.DB
-	BaseChain shared.Chain
+	BaseChain chain.Chain
 }
 
 // Creates Logger, creates ServeMux, and creates universal middleware chain. These values are then used to create a Server struct.
@@ -39,7 +39,7 @@ func Init() *Server {
 	}
 
 	// Set up universal middleware!
-	baseChain := shared.Chain{
+	baseChain := chain.Chain{
 		middleware.LogRequest(logger),
 	}
 
