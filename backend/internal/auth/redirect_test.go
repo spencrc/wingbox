@@ -74,9 +74,11 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
+const ACCESS_TOKEN = "mock_atoken_123"
+const REFRESH_TOKEN = "mock_rtoken_456"
+
 func TestFetchTokenData(t *testing.T) {
-	const ACCESS_TOKEN = "mock_atoken_123"
-	const REFRESH_TOKEN = "mock_rtoken_456"
+
 	
 	body := fmt.Sprintf(`{
 		"access_token": "%s",
@@ -97,12 +99,35 @@ func TestFetchTokenData(t *testing.T) {
 	res, err := fetchTokenData("code", "uri", "id", "secret", client)
 	if err != nil {
 		t.Errorf("did not expect error, got %v", err)
+	} else if res.AccessToken != ACCESS_TOKEN {
+		t.Errorf("expected %s, got %s", ACCESS_TOKEN, res.AccessToken)
+	} else if res.RefreshToken != "mock_rtoken_456" {
+		t.Errorf("expected %s, got %s", REFRESH_TOKEN, res.RefreshToken)
+	}
+}
+
+func TestFetchDiscordUserData(t *testing.T) {
+	const USER_ID = "123456"
+	
+	body := fmt.Sprintf(`{
+		"id": "%s"
+	}`, USER_ID)
+
+	// see here: https://dev.to/andreidascalu/testing-your-api-client-in-go-a-method-4bm4
+	client := &http.Client{
+		Transport: RoundTripFunc(func(req *http.Request) *http.Response {
+			return &http.Response{
+				StatusCode: 200,
+				Body: io.NopCloser(strings.NewReader(body)),
+				Header: make(http.Header),
+			}
+		}),
 	}
 
-	if res.AccessToken != ACCESS_TOKEN {
-		t.Errorf("expected %s, got %s", ACCESS_TOKEN, res.AccessToken)
-	}
-	if res.RefreshToken != "mock_rtoken_456" {
-		t.Errorf("expected %s, got %s", REFRESH_TOKEN, res.RefreshToken)
+	res, err := fetchDiscordUserData(TokenRes{AccessToken: ACCESS_TOKEN}, client)
+	if err != nil {
+		t.Errorf("did not expect error, got %v", err)
+	} else if res.UserId != USER_ID {
+		t.Errorf("expected %s, got %s", USER_ID, res.UserId)
 	}
 }
